@@ -90,11 +90,18 @@ const CallPage: FC<CallPageProps> = ({ callId, username, isCaller = true, onCall
 
       // Get local media
       console.log('🎤 Requesting camera and microphone...');
+      
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia is not supported. Please use HTTPS and a modern browser.');
+      }
+      
       const localStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: {
           width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          height: { ideal: 1080 },
+          facingMode: 'user' // Use front camera on mobile
         }
       });
 

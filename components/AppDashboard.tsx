@@ -127,9 +127,27 @@ const AppDashboard: FC<AppDashboardProps> = ({ username, onLogout }) => {
   }, []);
 
   const setupSocketListeners = () => {
-    socketService.on('incoming-call', ({ callId, callerId, callerName }: any) => {
-      addLog(`Incoming call from ${callerName}`, 'info');
-      setIncomingCallData({ callId, callerId, callerName });
+    socketService.on('incoming-call', async ({ callId, callerId, callerName }: any) => {
+      let displayName = callerName;
+      
+      if (callerName && callerName.match(/^[0-9a-f]{24}$/i)) {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(
+            `https://video-calling-mhdk.onrender.com/api/users/${callerId}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          if (response.ok) {
+            const userData = await response.json();
+            displayName = userData.username || callerName;
+          }
+        } catch (error) {
+          console.error('Failed to fetch caller username:', error);
+        }
+      }
+      
+      addLog(`Incoming call from ${displayName}`, 'info');
+      setIncomingCallData({ callId, callerId, callerName: displayName });
     });
 
     socketService.on('call-accepted', ({ callId, calleeId, callerId }: any) => {
