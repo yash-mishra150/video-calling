@@ -1,7 +1,7 @@
 "use client";
 
-import { FC, useState, useEffect, useRef } from 'react';
-import { Search, X } from 'lucide-react';
+import { FC, useState, useEffect, useRef } from "react";
+import { Search, X } from "lucide-react";
 
 interface SearchBarProps {
   onSearch?: (query: string) => void;
@@ -9,8 +9,12 @@ interface SearchBarProps {
   debounceDelay?: number;
 }
 
-const SearchBar: FC<SearchBarProps> = ({ onSearch, placeholder = "Search contacts or dial", debounceDelay = 500 }) => {
-  const [query, setQuery] = useState('');
+const SearchBar: FC<SearchBarProps> = ({
+  onSearch,
+  placeholder = "Search contacts or dial",
+  debounceDelay = 500,
+}) => {
+  const [query, setQuery] = useState("");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -31,10 +35,10 @@ const SearchBar: FC<SearchBarProps> = ({ onSearch, placeholder = "Search contact
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [query, onSearch, debounceDelay]);
+  }, [query, debounceDelay]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       // Clear timer and search immediately on Enter
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -63,12 +67,12 @@ const SearchBar: FC<SearchBarProps> = ({ onSearch, placeholder = "Search contact
         {query && (
           <button
             onClick={() => {
-              setQuery('');
+              setQuery("");
               if (debounceTimerRef.current) {
                 clearTimeout(debounceTimerRef.current);
               }
               if (onSearch) {
-                onSearch('');
+                onSearch("");
               }
             }}
             className="text-gray-400 hover:text-gray-600 transition-colors"
