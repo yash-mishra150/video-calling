@@ -10,7 +10,7 @@ const CallRoute: FC = () => {
     window.location.href = '/';
   };
 
-  return <CallPage callerName="Mahesh Mishra" onEndCall={handleEndCall} />;
+  return <CallPage callId="demo-call-123" username="Mahesh Mishra" isCaller={true} onCallEnd={handleEndCall} />;
 };
 
 export default CallRoute;
