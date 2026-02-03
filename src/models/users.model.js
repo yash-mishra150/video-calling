@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     participantName: String,
     startTime: Date,
     endTime: Date,
-    duration: Number, // in seconds
+    duration: Number, 
     callType: {
       type: String,
       enum: ['incoming', 'outgoing', 'missed'],
@@ -31,7 +31,6 @@ const userSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
-// Index for faster favorite lookups
 userSchema.index({ favorites: 1 });
 userSchema.index({ 'callHistory.startTime': -1 });
 

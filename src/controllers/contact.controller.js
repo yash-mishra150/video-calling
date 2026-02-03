@@ -3,33 +3,26 @@ const User = require('../models/users.model.js');
 module.exports = (io, presenceService) => {
   const controllers = {};
 
-  /**
-   * Toggle Favorite - Add/Remove from favorites list
-   */
+
   controllers.toggleFavorite = async (req, res) => {
     const { userId } = req.body;
     const currentUserId = req.user.userId;
 
     try {
-      // Prevent adding yourself
       if (currentUserId === userId) {
         return res.status(400).json({ error: 'Cannot favorite yourself' });
       }
 
-      // Check if user exists
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // Get current user
       const currentUser = await User.findById(currentUserId);
 
-      // Check if already in favorites
       const isFavorited = currentUser.favorites.includes(userId);
 
       if (isFavorited) {
-        // Remove from favorites
         currentUser.favorites = currentUser.favorites.filter(id => id.toString() !== userId);
         await currentUser.save();
         res.json({ 
@@ -37,7 +30,6 @@ module.exports = (io, presenceService) => {
           isFavorited: false
         });
       } else {
-        // Add to favorites
         currentUser.favorites.push(userId);
         await currentUser.save();
         res.json({ 
@@ -51,9 +43,7 @@ module.exports = (io, presenceService) => {
     }
   };
 
-  /**
-   * Get Favorites
-   */
+ 
   controllers.getFavorites = async (req, res) => {
     const userId = req.user.userId;
 
@@ -73,9 +63,7 @@ module.exports = (io, presenceService) => {
     }
   };
 
-  /**
-   * Check if user is in favorites
-   */
+ 
   controllers.isFavorited = async (req, res) => {
     const { userId } = req.query;
     const currentUserId = req.user.userId;
@@ -90,9 +78,7 @@ module.exports = (io, presenceService) => {
     }
   };
 
-  /**
-   * Get All Friends (accepted only)
-   */
+
   controllers.getFriends = async (req, res) => {
     const userId = req.user.userId;
 
@@ -112,15 +98,12 @@ module.exports = (io, presenceService) => {
     }
   };
 
-  /**
-   * Remove Friend
-   */
+
   controllers.removeFriend = async (req, res) => {
     const { friendId } = req.body;
     const userId = req.user.userId;
 
     try {
-      // Get both users
       const currentUser = await User.findById(userId);
       const friend = await User.findById(friendId);
 
@@ -128,7 +111,6 @@ module.exports = (io, presenceService) => {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // Remove from both friends arrays
       currentUser.friends = currentUser.friends.filter(
         id => id.toString() !== friendId
       );

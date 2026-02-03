@@ -687,7 +687,7 @@
               <video id="local-video" autoplay muted playsinline></video>
             </div>
             <div>
-              <div class="video-label">📹 Their Video</div>
+              <div class="video-label">📹 <span id="remote-user-name">User</span>'s Video</div>
               <video id="remote-video" autoplay playsinline></video>
             </div>
           </div>
@@ -735,6 +735,7 @@
     let micEnabled = true;
     let cameraEnabled = true;
     let currentCallId = null;
+    let remoteUserName = 'User';
 
     // ============================================================================
     // CONSOLE LOGGING (Override console.log)
@@ -1383,12 +1384,13 @@
         showAlert(`Call failed: ${message}`, 'error');
       });
 
-      socket.on('call-accepted', ({ callId, calleeId, callerId }) => {
+      socket.on('call-accepted', ({ callId, calleeId, callerId, calleeName, callerName }) => {
         console.log('✅ Call accepted!');
         console.log('🔄 Starting WebRTC signaling...');
         const isCallerFlag = calleeId ? true : false;
         const remotePeerId = calleeId || callerId;
-        startWebRTC(socket, callId, remotePeerId, isCallerFlag);
+        remoteUserName = isCallerFlag ? (calleeName || 'User') : (callerName || 'User');
+        startWebRTC(socket, callId, remotePeerId, isCallerFlag, remoteUserName);
       });
 
       socket.on('call-rejected', ({ callId, reason }) => {
@@ -1530,13 +1532,14 @@
     /**
      * Start WebRTC
      */
-    async function startWebRTC(socket, callId, remotePeerId, isCallerFlag) {
+    async function startWebRTC(socket, callId, remotePeerId, isCallerFlag, remoteUserName = 'User') {
       console.log(`🎥 Starting WebRTC (${isCallerFlag ? 'Caller' : 'Callee'})...`);
 
       try {
         // Show call UI
         document.getElementById('call-ui').style.display = 'block';
         document.getElementById('incoming-call-ui').innerHTML = '';
+        document.getElementById('remote-user-name').textContent = remoteUserName;
 
         // Create RTCPeerConnection
         peerConnection = new RTCPeerConnection({

@@ -15,7 +15,6 @@ exports.getCallHistory = async (req, res) => {
     const user = await User.findById(req.user.userId).select('callHistory');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Sort by most recent first
     const history = user.callHistory.sort((a, b) => b.startTime - a.startTime);
     
     res.json({

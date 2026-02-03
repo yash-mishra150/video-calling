@@ -1,12 +1,7 @@
-/**
- * Request logging middleware
- * Logs method, route, status, and response time for all HTTP requests
- */
 
 module.exports = (req, res, next) => {
   const start = Date.now();
 
-  // Capture original send function
   const originalSend = res.send;
 
   res.send = function (data) {

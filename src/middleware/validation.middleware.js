@@ -1,7 +1,4 @@
-/**
- * Input validation middleware
- * Basic validation for common request patterns
- */
+
 
 const validateAuth = (req, res, next) => {
   const { username, password } = req.body;
@@ -18,7 +15,6 @@ const validateAuth = (req, res, next) => {
     });
   }
 
-  // Sanitize inputs
   req.body.username = username.trim().toLowerCase();
   req.body.password = password.trim();
 
@@ -26,7 +22,6 @@ const validateAuth = (req, res, next) => {
 };
 
 const validateContactAdd = (req, res, next) => {
-  // For favorites - validate userId
   const userId = req.body.userId;
 
   if (!userId || typeof userId !== 'string') {

@@ -1,21 +1,7 @@
-/**
- * Production-Grade Presence Service
- * 
- * Features:
- * - Heartbeat-based presence (detect away/zombie connections)
- * - Status types: online, away, busy, offline
- * - Friend list caching (reduces DB queries by 95%)
- * - Batched presence updates (reduces network spam)
- * - Last seen timestamps
- * - Auto-cleanup of stale connections
- * 
- * Note: Uses in-memory storage optimized for single-server deployment
- * For multi-server: Replace Maps with Redis
- */
+
 
 const User = require('../models/users.model');
 
-// Status types
 const PRESENCE_STATUS = {
   ONLINE: 'online',
   AWAY: 'away',
@@ -23,16 +9,14 @@ const PRESENCE_STATUS = {
   OFFLINE: 'offline'
 };
 
-// In-memory stores (for free tier - replace with Redis for production)
-const presenceStore = new Map(); // userId -> { status, lastSeen, socketId, username }
-const friendsCache = new Map();  // userId -> { friends: [...], cachedAt }
-const presenceQueue = new Map(); // userId -> { status, timestamp } - for batching
+const presenceStore = new Map(); 
+const friendsCache = new Map();  
+const presenceQueue = new Map(); 
 
-// Configuration
-const HEARTBEAT_INTERVAL = 30000;     // 30 seconds
-const HEARTBEAT_TIMEOUT = 90000;      // 90 seconds (3 missed heartbeats = away)
-const BATCH_INTERVAL = 5000;          // 5 seconds
-const FRIEND_CACHE_TTL = 3600000;     // 1 hour
+const HEARTBEAT_INTERVAL = 30000;    
+const HEARTBEAT_TIMEOUT = 90000;     
+const BATCH_INTERVAL = 5000;          
+const FRIEND_CACHE_TTL = 3600000;     
 
 class PresenceService {
   constructor(io) {
@@ -43,9 +27,7 @@ class PresenceService {
     this.startCleanupTask();
   }
 
-  /**
-   * Set user as online
-   */
+
   async setOnline(userId, socketId, username) {
     presenceStore.set(userId, {
       status: PRESENCE_STATUS.ONLINE,
@@ -55,13 +37,10 @@ class PresenceService {
       lastHeartbeat: Date.now()
     });
 
-    // Notify friends
     await this.notifyFriendsOfStatusChange(userId, PRESENCE_STATUS.ONLINE);
   }
 
-  /**
-   * Set user as offline
-   */
+
   async setOffline(userId) {
     const presence = presenceStore.get(userId);
     if (!presence) return;
@@ -69,20 +48,17 @@ class PresenceService {
     presence.status = PRESENCE_STATUS.OFFLINE;
     presence.lastSeen = Date.now();
     
-    // Keep in store for "last seen" queries
     setTimeout(() => {
       presenceStore.delete(userId);
-    }, 300000); // Remove after 5 minutes
+    }, 300000); 
 
-    // Update DB for persistent last seen
+   
     await User.findByIdAndUpdate(userId, { lastSeen: new Date() }).catch(() => {});
 
     await this.notifyFriendsOfStatusChange(userId, PRESENCE_STATUS.OFFLINE);
   }
 
-  /**
-   * Update user status (online, away, busy)
-   */
+
   async updateStatus(userId, status) {
     if (!Object.values(PRESENCE_STATUS).includes(status)) {
       return false;
@@ -98,9 +74,7 @@ class PresenceService {
     return true;
   }
 
-  /**
-   * Handle heartbeat from client
-   */
+ 
   handleHeartbeat(userId) {
     const presence = presenceStore.get(userId);
     if (!presence) return false;
@@ -108,7 +82,6 @@ class PresenceService {
     presence.lastHeartbeat = Date.now();
     presence.lastSeen = Date.now();
 
-    // If user was away, set back to online
     if (presence.status === PRESENCE_STATUS.AWAY) {
       this.updateStatus(userId, PRESENCE_STATUS.ONLINE);
     }
@@ -116,19 +89,15 @@ class PresenceService {
     return true;
   }
 
-  /**
-   * Get cached friends list (reduces DB queries)
-   * Reads from User.friends array
-   */
+
   async getFriends(userId) {
     const cached = friendsCache.get(userId);
     
-    // Return cache if valid
+
     if (cached && (Date.now() - cached.cachedAt) < FRIEND_CACHE_TTL) {
       return cached.friends;
     }
 
-    // Cache miss - query DB
     try {
       const User = require('../models/users.model.js');
       const user = await User.findById(userId).select('friends').lean();
@@ -137,10 +106,10 @@ class PresenceService {
         return [];
       }
 
-      // Convert ObjectIds to strings
+ 
       const friends = user.friends.map(id => id.toString());
       
-      // Cache for 1 hour
+
       friendsCache.set(userId, {
         friends,
         cachedAt: Date.now()
@@ -153,23 +122,19 @@ class PresenceService {
     }
   }
 
-  /**
-   * Invalidate friend cache when contacts change
-   */
+
   invalidateFriendCache(userId) {
     friendsCache.delete(userId);
   }
 
-  /**
-   * Get online friends with their status
-   */
+
   async getOnlineFriends(userId) {
     const friends = await this.getFriends(userId);
     const onlineFriends = [];
-    const seenIds = new Set(); // Deduplicate friends
+    const seenIds = new Set(); 
 
     for (const friendId of friends) {
-      // Skip if already added (prevent duplicates)
+     
       if (seenIds.has(friendId)) {
         console.warn(`[PRESENCE] Duplicate friend detected: ${friendId}`);
         continue;
@@ -190,9 +155,7 @@ class PresenceService {
     return onlineFriends;
   }
 
-  /**
-   * Get presence info for a specific user
-   */
+
   getPresence(userId) {
     const presence = presenceStore.get(userId);
     if (!presence) {
@@ -206,9 +169,7 @@ class PresenceService {
     };
   }
 
-  /**
-   * Queue presence update for batching (reduces network spam)
-   */
+
   queuePresenceUpdate(userId, status) {
     presenceQueue.set(userId, {
       userId,
@@ -217,16 +178,12 @@ class PresenceService {
     });
   }
 
-  /**
-   * Notify friends of status change (uses batching)
-   */
+
   async notifyFriendsOfStatusChange(userId, status) {
     this.queuePresenceUpdate(userId, status);
   }
 
-  /**
-   * Get socket IDs of online friends
-   */
+ 
   async getOnlineFriendSocketIds(userId) {
     const friends = await this.getFriends(userId);
     const socketIds = [];
@@ -241,9 +198,7 @@ class PresenceService {
     return socketIds;
   }
 
-  /**
-   * Batch processor: Send accumulated updates every 5 seconds
-   */
+  
   startBatchProcessor() {
     this.batchTimer = setInterval(() => {
       if (presenceQueue.size === 0) return;
@@ -251,14 +206,13 @@ class PresenceService {
       const updates = Array.from(presenceQueue.values());
       presenceQueue.clear();
 
-      // Group updates by affected users
+
       const notificationMap = new Map();
 
       updates.forEach(update => {
         const presence = presenceStore.get(update.userId);
         if (!presence) return;
 
-        // Find all friends who should receive this update
         this.getFriends(update.userId).then(friends => {
           friends.forEach(friendId => {
             if (!notificationMap.has(friendId)) {
@@ -272,7 +226,6 @@ class PresenceService {
             });
           });
 
-          // Send batched updates to each affected friend
           notificationMap.forEach((batch, friendId) => {
             const friendPresence = presenceStore.get(friendId);
             if (friendPresence && friendPresence.socketId) {
@@ -288,37 +241,30 @@ class PresenceService {
     }, BATCH_INTERVAL);
   }
 
-  /**
-   * Cleanup task: Detect away users and zombie connections
-   */
+
   startCleanupTask() {
     this.cleanupTimer = setInterval(() => {
       const now = Date.now();
 
       for (const [userId, presence] of presenceStore.entries()) {
-        // Skip offline users
         if (presence.status === PRESENCE_STATUS.OFFLINE) continue;
 
         const timeSinceHeartbeat = now - presence.lastHeartbeat;
 
-        // Set to away after 90 seconds of no heartbeat
         if (timeSinceHeartbeat > HEARTBEAT_TIMEOUT && presence.status !== PRESENCE_STATUS.AWAY) {
           console.log(`[PRESENCE] User ${userId} is now AWAY (no heartbeat for ${Math.round(timeSinceHeartbeat / 1000)}s)`);
           this.updateStatus(userId, PRESENCE_STATUS.AWAY);
         }
 
-        // Remove zombie connections after 10 minutes
         if (timeSinceHeartbeat > 600000) {
           console.log(`[PRESENCE] Removing zombie connection for ${userId}`);
           this.setOffline(userId);
         }
       }
-    }, 30000); // Check every 30 seconds
+    }, 30000); 
   }
 
-  /**
-   * Cleanup timers on shutdown
-   */
+ 
   destroy() {
     if (this.batchTimer) clearInterval(this.batchTimer);
     if (this.cleanupTimer) clearInterval(this.cleanupTimer);
