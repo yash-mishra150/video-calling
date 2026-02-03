@@ -1,7 +1,7 @@
 "use client";
 
 import { FC, useState } from 'react';
-import { Lock, Mail, Video } from 'lucide-react';
+import { Lock, Mail, Video, LogIn, UserPlus, Loader2 } from 'lucide-react';
 import { apiService } from '@/lib/api';
 
 interface AuthPageProps {
@@ -104,7 +104,10 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                   : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
               }`}
             >
-              🔐 Login
+              <span className="inline-flex items-center justify-center gap-2">
+                <LogIn className="w-4 h-4" />
+                Login
+              </span>
             </button>
             <button
               onClick={() => {
@@ -118,7 +121,10 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                   : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
               }`}
             >
-              Register
+              <span className="inline-flex items-center justify-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                Register
+              </span>
             </button>
           </div>
 
@@ -142,13 +148,13 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                     Username
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-3 w-5 h-5 text-neutral-400" />
                     <input
                       type="text"
                       value={loginUsername}
                       onChange={(e) => setLoginUsername(e.target.value)}
                       placeholder="Enter your username"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -165,7 +171,7 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="Enter your password"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -176,7 +182,17 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                   disabled={loading}
                   className="w-full bg-linear-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  {loading ? '🔄 Logging in...' : '🔐 Login'}
+                  {loading ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Logging in...
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <LogIn className="w-4 h-4" />
+                      Login
+                    </span>
+                  )}
                 </button>
               </form>
             ) : (
@@ -192,7 +208,7 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                       value={registerUsername}
                       onChange={(e) => setRegisterUsername(e.target.value)}
                       placeholder="Choose a username"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -210,7 +226,7 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
                       placeholder="Choose a password"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -221,7 +237,17 @@ const AuthPage: FC<AuthPageProps> = ({ onLoginSuccess }) => {
                   disabled={loading}
                   className="w-full bg-linear-to-r from-green-600 to-green-700 text-white font-semibold py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  {loading ? 'Creating account...' : 'Register'}
+                  {loading ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating account...
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <UserPlus className="w-4 h-4" />
+                      Register
+                    </span>
+                  )}
                 </button>
               </form>
             )}
