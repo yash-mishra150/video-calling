@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎥 WebRTC 1-to-1 Video Calling App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    /* ============ LOGIN SECTION ============ */
+    #login-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 30px;
+      gap: 20px;
+    }
+
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-box h2 {
+      margin-bottom: 30px;
+      color: #333;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 0.9em;
+      width: auto;
+      margin-right: 10px;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-success {
+      background: #28a745;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+    }
+
+    .auth-links {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .auth-links button {
+      background: none;
+      border: none;
+      color: #667eea;
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 0.95em;
+    }
+
+    /* ============ MAIN APP SECTION ============ */
+    #app-section {
+      display: none;
+    }
+
+    .app-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      padding: 30px;
+      min-height: 600px;
+    }
+
+    @media (max-width: 1024px) {
+      .app-content {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #e9ecef;
+    }
+
+    .panel h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+      margin-bottom: 15px;
+      cursor: pointer;
+      position: relative;
+      transition: opacity 0.3s;
+    }
+
+    .status-badge:hover {
+      opacity: 0.8;
+    }
+
+    .status-online {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-away {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-busy {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status-offline {
+      background: #e2e3e5;
+      color: #383d41;
+    }
+
+    /* Status dropdown menu */
+    .status-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 5px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      min-width: 150px;
+    }
+
+    .status-menu-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .status-menu-item:hover {
+      background: #f8f9fa;
+    }
+
+    .status-menu-item:first-child {
+      border-radius: 8px 8px 0 0;
+    }
+
+    .status-menu-item:last-child {
+      border-radius: 0 0 8px 8px;
+    }
+
+    /* ============ USER LIST ============ */
+    #online-users-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      transition: background 0.2s;
+    }
+
+    .user-item:hover {
+      background: #f0f0f0;
+    }
+
+    .user-item:last-child {
+      border-bottom: none;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .user-status {
+      font-size: 0.85em;
+      margin-right: 10px;
+    }
+
+    .user-status.online {
+      color: #28a745;
+    }
+
+    .user-status.offline {
+      color: #dc3545;
+    }
+
+    /* ============ SEARCH ============ */
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95em;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    #search-results {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    /* ============ VIDEO CALL SECTION ============ */
+    #call-ui {
+      display: none;
+      grid-column: 1 / -1;
+    }
+
+    .video-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+      background: #000;
+      border-radius: 10px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    @media (max-width: 768px) {
+      .video-container {
+        grid-template-columns: 1fr;
+        min-height: 300px;
+      }
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      background: #222;
+      object-fit: cover;
+    }
+
+    .video-section h3 {
+      color: white;
+      margin-bottom: 10px;
+      font-size: 0.95em;
+    }
+
+    .video-label {
+      color: white;
+      font-size: 0.85em;
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+
+    .call-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    /* ============ INCOMING CALL ============ */
+    #incoming-call-ui {
+      min-height: 0;
+    }
+
+    .incoming-call-container {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .incoming-call-container h2 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    .incoming-call-container p {
+      font-size: 1.2em;
+      margin-bottom: 25px;
+      opacity: 0.95;
+    }
+
+    .incoming-call-container .btn {
+      margin: 0 10px;
+    }
+
+    /* ============ LOGS ============ */
+    #console-logs {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      line-height: 1.4;
+    }
+
+    .log-entry {
+      margin: 3px 0;
+      word-break: break-word;
+    }
+
+    .log-success {
+      color: #00ff00;
+    }
+
+    .log-error {
+      color: #ff6b6b;
+    }
+
+    .log-info {
+      color: #64b5f6;
+    }
+
+    .log-warning {
+      color: #ffa726;
+    }
+
+    /* ============ NAVBAR ============ */
+    .navbar {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-info {
+      font-size: 0.95em;
+      color: #666;
+    }
+
+    .user-info strong {
+      color: #333;
+    }
+
+    /* ============ LOADING SPINNER ============ */
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ============ ALERTS ============ */
+    .alert {
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .alert-show {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- ============ HEADER ============ -->
+    <div class="header">
+      <h1>🎥 WebRTC Video Calling</h1>
+      <p>1-to-1 Video Call Application</p>
+    </div>
+
+    <!-- ============ LOGIN SECTION ============ -->
+    <div id="login-section">
+      <div class="login-box">
+        <h2>📱 Welcome</h2>
+        
+        <div id="alert-container"></div>
+
+        <!-- Login Form -->
+        <div id="login-form">
+          <h3 style="color: #333; margin-bottom: 20px; text-align: center;">Login</h3>
+          <div class="form-group">
+            <label for="login-username">Username</label>
+            <input 
+              type="text" 
+              id="login-username" 
+              placeholder="Enter your username"
+              autocomplete="off"
+            >
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input 
+              type="password" 
+              id="login-password" 
+              placeholder="Enter your password"
+              autocomplete="off"
+            >
+          </div>
+          <button class="btn" onclick="handleLogin()">🔐 Login</button>
+          
+          <div class="auth-links">
+            <p>Don't have an account? 
+              <button onclick="toggleAuthForm()">Register here</button>
+            </p>
+          </div>
+        </div>
+
+        <!-- Register Form (hidden) -->
+        <div id="register-form" style="display: none;">
+          <h3 style="color: #333; margin-bottom: 20px; text-align: center;">Create Account</h3>
+          <div class="form-group">
+            <label for="register-username">Username</label>
+            <input 
+              type="text" 
+              id="register-username" 
+              placeholder="Choose a username"
+              autocomplete="off"
+            >
+          </div>
+          <div class="form-group">
+            <label for="register-password">Password</label>
+            <input 
+              type="password" 
+              id="register-password" 
+              placeholder="Choose a password (min 6 chars)"
+              autocomplete="off"
+            >
+          </div>
+          <button class="btn" onclick="handleRegister()">✅ Register</button>
+          
+          <div class="auth-links">
+            <p>Already have an account? 
+              <button onclick="toggleAuthForm()">Login here</button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MAIN APP SECTION ============ -->
+    <div id="app-section">
+      <!-- Navbar -->
+      <div class="navbar">
+        <div class="navbar-left">
+          <h2 style="margin: 0; color: #333;">App</h2>
+        </div>
+        <div class="navbar-right">
+          <div class="user-info">
+            <strong id="current-username"></strong>
+            <span id="status-indicator" class="status-badge status-offline" onclick="toggleStatusMenu()">🔴 Offline</span>
+            <!-- Status dropdown menu -->
+            <div id="status-menu" class="status-menu" style="display: none;">
+              <div class="status-menu-item" onclick="setStatus('online')">🟢 Online</div>
+              <div class="status-menu-item" onclick="setStatus('away')">🟡 Away</div>
+              <div class="status-menu-item" onclick="setStatus('busy')">🔴 Busy</div>
+            </div>
+          </div>
+          <button class="btn btn-small btn-secondary" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <div class="app-content">
+        <!-- ============ LEFT PANEL: ONLINE FRIENDS ============ -->
+        <div class="panel">
+          <h2>👥 Online Friends</h2>
+          <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">Friends from your contacts who are online</p>
+          <button class="btn btn-small" onclick="refreshOnlineUsers()" style="margin-bottom: 15px;">🔄 Refresh</button>
+          <div id="online-users-list">
+            <p style="text-align: center; color: #999; padding: 20px;">Loading...</p>
+          </div>
+        </div>
+
+        <!-- ============ MIDDLE PANEL: FAVORITES ============ -->
+        <div class="panel">
+          <h2>⭐ Favorites</h2>
+          <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">Your favorite users</p>
+          <button class="btn btn-small" onclick="loadFavorites()" style="margin-bottom: 15px;">🔄 Refresh</button>
+          <div id="favorites-list">
+            <p style="text-align: center; color: #999; padding: 20px;">No favorites yet</p>
+          </div>
+        </div>
+
+        <!-- ============ RIGHT PANEL: SEARCH & CONTACTS ============ -->
+        <div class="panel">
+          <h2>🔍 Search Users</h2>
+          <div class="search-box">
+            <input 
+              type="text" 
+              id="search-input" 
+              placeholder="Search username..."
+              autocomplete="off"
+            >
+            <button class="btn btn-small" onclick="handleSearch()">Search</button>
+          </div>
+          <div id="search-results">
+            <p style="text-align: center; color: #999; padding: 20px;">Search to find users</p>
+          </div>
+        </div>
+
+        <!-- ============ INCOMING CALL ============ -->
+        <div style="grid-column: 1 / -1;">
+          <div id="incoming-call-ui"></div>
+        </div>
+
+        <!-- ============ VIDEO CALL SECTION ============ -->
+        <div id="call-ui">
+          <h2 style="grid-column: 1 / -1; margin-bottom: 20px;">📞 Active Call</h2>
+          
+          <div class="video-container">
+            <div>
+              <div class="video-label">📹 Your Video</div>
+              <video id="local-video" autoplay muted playsinline></video>
+            </div>
+            <div>
+              <div class="video-label">📹 Their Video</div>
+              <video id="remote-video" autoplay playsinline></video>
+            </div>
+          </div>
+
+          <div class="call-controls">
+            <button class="btn btn-primary" id="mic-btn" title="Toggle Microphone">🎤 Mic ON</button>
+            <button class="btn btn-primary" id="camera-btn" title="Toggle Camera">📹 Camera ON</button>
+            <button class="btn btn-danger" id="hangup-btn">📵 End Call</button>
+          </div>
+        </div>
+
+        <!-- ============ CALL HISTORY SECTION ============ -->
+        <div id="history-section">
+          <h2>📋 Call History</h2>
+          <button class="btn btn-small" id="refresh-history-btn">Refresh</button>
+          <button class="btn btn-small btn-secondary" id="clear-history-btn">Clear History</button>
+          <div id="call-history-list" style="margin-top: 15px; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; background: white;">
+            <div style="padding: 15px; color: #999;">No calls yet</div>
+          </div>
+        </div>
+
+        <!-- ============ CONSOLE LOGS ============ -->
+        <div style="grid-column: 1 / -1;">
+          <div class="panel">
+            <h2>📝 Console</h2>
+            <div id="console-logs">
+              <div class="log-entry log-info">> Console initialized</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.IO Library -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.js"></script>
+
+  <script>
+    // ============================================================================
+    // GLOBAL VARIABLES
+    // ============================================================================
+    let socket = null;
+    let peerConnection = null;
+    let localStream = null;
+    let micEnabled = true;
+    let cameraEnabled = true;
+    let currentCallId = null;
+
+    // ============================================================================
+    // CONSOLE LOGGING (Override console.log)
+    // ============================================================================
+    const consoleLogsDiv = document.getElementById('console-logs');
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    function addLog(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      const timestamp = new Date().toLocaleTimeString();
+      entry.textContent = `[${timestamp}] ${message}`;
+      consoleLogsDiv.appendChild(entry);
+      consoleLogsDiv.scrollTop = consoleLogsDiv.scrollHeight;
+    }
+
+    console.log = function(...args) {
+      originalLog(...args);
+      addLog(args.join(' '), 'success');
+    };
+
+    console.error = function(...args) {
+      originalError(...args);
+      addLog(args.join(' '), 'error');
+    };
+
+    // ============================================================================
+    // SECTION 1: INITIALIZATION & SOCKET CONNECTION
+    // ============================================================================
+
+    /**
+     * Show/Hide Alert
+     */
+    function showAlert(message, type = 'success') {
+      const alertContainer = document.getElementById('alert-container');
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type} alert-show`;
+      alert.textContent = message;
+      alertContainer.innerHTML = '';
+      alertContainer.appendChild(alert);
+      
+      setTimeout(() => {
+        alert.classList.remove('alert-show');
+      }, 5000);
+    }
+
+    /**
+     * Toggle between login and register forms
+     */
+    function toggleAuthForm() {
+      document.getElementById('login-form').style.display = 
+        document.getElementById('login-form').style.display === 'none' ? 'block' : 'none';
+      document.getElementById('register-form').style.display = 
+        document.getElementById('register-form').style.display === 'none' ? 'block' : 'none';
+    }
+
+    /**
+     * Register User
+     */
+    async function handleRegister() {
+      const username = document.getElementById('register-username').value.trim();
+      const password = document.getElementById('register-password').value.trim();
+
+      if (!username || !password) {
+        showAlert('Please fill in all fields', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+          throw new Error('Registration failed');
+        }
+
+        console.log('✅ User registered successfully');
+        showAlert('Registration successful! Please login.', 'success');
+        toggleAuthForm(); // Switch back to login
+      } catch (error) {
+        console.error('❌ Registration error:', error.message);
+        showAlert(`Registration failed: ${error.message}`, 'error');
+      }
+    }
+
+    /**
+     * Login User
+     */
+    async function handleLogin() {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+
+      if (!username || !password) {
+        showAlert('Please fill in all fields', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+          throw new Error('Login failed');
+        }
+
+        const { token, userId, username: returnedUsername } = await response.json();
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('userId', userId);
+        localStorage.setItem('username', returnedUsername);
+
+        console.log('✅ Logged in as:', returnedUsername);
+        console.log('✅ User ID:', userId);
+
+        // Show app section
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('app-section').style.display = 'block';
+        document.getElementById('current-username').textContent = returnedUsername;
+
+        // Setup call history UI
+        document.getElementById('refresh-history-btn').onclick = loadCallHistory;
+        document.getElementById('clear-history-btn').onclick = clearCallHistory;
+
+        // Load initial call history
+        loadCallHistory();
+
+        // Connect Socket
+        connectSocket();
+      } catch (error) {
+        console.error('❌ Login error:', error.message);
+        showAlert(`Login failed: ${error.message}`, 'error');
+      }
+    }
+
+    /**
+     * Toggle status dropdown menu
+     */
+    function toggleStatusMenu() {
+      const menu = document.getElementById('status-menu');
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    /**
+     * Close status menu when clicking outside
+     */
+    document.addEventListener('click', (e) => {
+      const indicator = document.getElementById('status-indicator');
+      const menu = document.getElementById('status-menu');
+      if (menu && indicator && !indicator.contains(e.target) && !menu.contains(e.target)) {
+        menu.style.display = 'none';
+      }
+    });
+
+    /**
+     * Logout
+     */
+    function logout() {
+      stopHeartbeat(); // Stop heartbeat before logout
+      listenersSetup = false; // Reset listeners flag for next login
+      localStorage.clear();
+      if (socket) socket.disconnect();
+      if (peerConnection) peerConnection.close();
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+
+      document.getElementById('app-section').style.display = 'none';
+      document.getElementById('login-section').style.display = 'flex';
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+
+      console.log('✅ Logged out');
+    }
+
+    /**
+     * Connect Socket.IO with heartbeat support
+     */
+    let heartbeatTimer = null;
+    let listenersSetup = false; // Track if listeners already registered
+    
+    function connectSocket() {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.error('❌ No token found');
+        return;
+      }
+
+      socket = io('http://localhost:5000', {
+        auth: { token },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5
+      });
+
+      socket.on('connect', () => {
+        console.log('✅ Socket connected - You are now ONLINE');
+        updateStatusIndicator('online');
+        
+        // Setup listeners only once
+        if (!listenersSetup) {
+          setupSocketListeners();
+          listenToPresence();
+          listenersSetup = true;
+          console.log('📋 Socket listeners registered');
+        }
+        
+        getOnlineUsers();
+        loadFavorites(); // Load favorites
+        startHeartbeat(); // Start heartbeat
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('❌ Connection error:', error.message);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('⚠️  Socket disconnected - You are now OFFLINE');
+        updateStatusIndicator('offline');
+        stopHeartbeat(); // Stop heartbeat
+        // Note: listeners persist across reconnects (this is intentional)
+      });
+      
+      // Heartbeat acknowledgement
+      socket.on('heartbeat-ack', () => {
+        // Server acknowledged heartbeat
+      });
+    }
+
+    /**
+     * Start heartbeat (send every 30 seconds)
+     */
+    function startHeartbeat() {
+      if (heartbeatTimer) return; // Already running
+      
+      heartbeatTimer = setInterval(() => {
+        if (socket && socket.connected) {
+          socket.emit('heartbeat');
+        }
+      }, 30000); // Every 30 seconds
+      
+      console.log('💓 Heartbeat started');
+    }
+
+    /**
+     * Stop heartbeat
+     */
+    function stopHeartbeat() {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+        console.log('💔 Heartbeat stopped');
+      }
+    }
+
+    /**
+     * Update status indicator in UI
+     */
+    function updateStatusIndicator(status) {
+      const indicator = document.getElementById('status-indicator');
+      const statusMap = {
+        'online': { text: '🟢 Online', class: 'status-online' },
+        'away': { text: '🟡 Away', class: 'status-away' },
+        'busy': { text: '🔴 Busy', class: 'status-busy' },
+        'offline': { text: '⚫ Offline', class: 'status-offline' }
+      };
+      
+      const statusInfo = statusMap[status] || statusMap['offline'];
+      indicator.textContent = statusInfo.text;
+      indicator.className = 'status-badge ' + statusInfo.class;
+    }
+
+    /**
+     * Set user status (online, away, busy)
+     */
+    function setStatus(status) {
+      if (socket && socket.connected) {
+        socket.emit('set-status', { status });
+      }
+    }
+
+    // ============================================================================
+    // SECTION 2: PRESENCE & USER SEARCH
+    // ============================================================================
+
+    /**
+     * Get Online Friends (new event name)
+     */
+    function getOnlineUsers() {
+      socket.emit('get-online-friends');
+    }
+
+    /**
+     * Display Online Friends with status
+     */
+    function displayOnlineUsers(friends) {
+      const currentUserId = localStorage.getItem('userId');
+      const userList = document.getElementById('online-users-list');
+      
+      // Deduplicate friends by userId (in case of any duplicates)
+      const uniqueFriends = [];
+      const seenIds = new Set();
+      
+      friends.forEach(friend => {
+        if (!seenIds.has(friend.userId)) {
+          uniqueFriends.push(friend);
+          seenIds.add(friend.userId);
+        } else {
+          console.warn('⚠️ Duplicate friend detected:', friend.username);
+        }
+      });
+      
+      if (uniqueFriends.length === 0) {
+        userList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No friends online</p>';
+        return;
+      }
+
+      userList.innerHTML = '';
+      uniqueFriends.forEach(friend => {
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        
+        // Status emoji
+        const statusEmoji = {
+          'online': '🟢',
+          'away': '🟡',
+          'busy': '🔴',
+          'offline': '⚫'
+        }[friend.status] || '⚫';
+        
+        // Last seen (if available)
+        let lastSeenText = '';
+        if (friend.lastSeen) {
+          const minutes = Math.round((Date.now() - friend.lastSeen) / 60000);
+          if (minutes > 0) {
+            lastSeenText = ` <span style="font-size: 0.9em; color: #999;">(${minutes}m ago)</span>`;
+          }
+        }
+        
+        div.innerHTML = `
+          <span class="user-name">${statusEmoji} ${friend.username}${lastSeenText}</span>
+          <button class="btn btn-small btn-success" onclick="initiateCall('${friend.userId}')" 
+                  ${friend.status === 'busy' ? 'disabled' : ''}>
+            ${friend.status === 'busy' ? 'In Call' : 'Call'}
+          </button>
+        `;
+        userList.appendChild(div);
+      });
+    }
+
+    /**
+     * Refresh Online Users
+     */
+    function refreshOnlineUsers() {
+      getOnlineUsers();
+    }
+
+    /**
+     * Listen to Presence - Batched updates
+     */
+    function listenToPresence() {
+      // Remove any existing presence listeners to prevent duplicates
+      socket.off('friend-online');
+      socket.off('friend-offline');
+      socket.off('presence-batch');
+      socket.off('online-friends');
+      socket.off('status-updated');
+      socket.off('status-error');
+      
+      // Now register fresh listeners
+      // Listen to friend online (single update)
+      socket.on('friend-online', ({ userId, username, status }) => {
+        console.log(`✅ ${username} came online`);
+        getOnlineUsers(); // Refresh list
+      });
+
+      // Listen to friend offline (single update)
+      socket.on('friend-offline', ({ userId, status }) => {
+        console.log(`🔴 Friend went offline`);
+        getOnlineUsers(); // Refresh list
+      });
+
+      // Listen to batched presence updates (more efficient)
+      socket.on('presence-batch', ({ updates }) => {
+        console.log(`📦 Received ${updates.length} presence updates`);
+        updates.forEach(update => {
+          console.log(`${update.username}: ${update.status}`);
+        });
+        getOnlineUsers(); // Refresh list
+      });
+
+      // Listen to online friends response
+      socket.on('online-friends', ({ friends }) => {
+        console.log(`📋 ${friends.length} friends online`);
+        displayOnlineUsers(friends);
+      });
+      
+      // Status update confirmation
+      socket.on('status-updated', ({ status }) => {
+        console.log(`✅ Status updated to: ${status}`);
+        updateStatusIndicator(status);
+      });
+      
+      socket.on('status-error', ({ message }) => {
+        console.error('❌ Status error:', message);
+      });
+    }
+
+    /**
+     * Search Users
+     */
+    async function handleSearch() {
+      const query = document.getElementById('search-input').value.trim();
+      if (!query) {
+        showAlert('Please enter a search query', 'error');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          `http://localhost:5000/api/users/search?q=${encodeURIComponent(query)}`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+
+        const users = await response.json();
+        console.log('🔍 Search results:', users.length, 'users found');
+        displaySearchResults(users);
+      } catch (error) {
+        console.error('❌ Search error:', error.message);
+        showAlert(`Search failed: ${error.message}`, 'error');
+      }
+    }
+
+    /**
+     * Display Search Results
+     */
+    function displaySearchResults(users) {
+      const resultsDiv = document.getElementById('search-results');
+      if (users.length === 0) {
+        resultsDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No users found</p>';
+        return;
+      }
+
+      resultsDiv.innerHTML = '';
+      users.forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        div.innerHTML = `
+          <div>
+            <div class="user-name">${user.username}</div>
+            <div style="font-size: 0.85em; color: #999;">${user._id.substring(0, 8)}...</div>
+          </div>
+          <div>
+            <button class="btn btn-small btn-success" onclick="initiateCall('${user._id}')">Call</button>
+            <button class="btn btn-small btn-success" id="fav-btn-${user._id}" onclick="toggleFavorite('${user._id}')">⭐ Add</button>
+          </div>
+        `;
+        resultsDiv.appendChild(div);
+        
+        // Check if already favorited
+        checkIfFavorited(user._id);
+      });
+    }
+
+    /**
+     * Check if user is favorited
+     */
+    async function checkIfFavorited(userId) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          `http://localhost:5000/api/contacts/is-favorited?userId=${userId}`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        const data = await response.json();
+        const btn = document.getElementById(`fav-btn-${userId}`);
+        if (btn) {
+          if (data.isFavorited) {
+            btn.textContent = '⭐ Remove';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-danger');
+          } else {
+            btn.textContent = '⭐ Add';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-danger');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking favorite status:', error);
+      }
+    }
+
+    /**
+     * Toggle Favorite
+     */
+    async function toggleFavorite(userId) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/contacts/toggle-favorite', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+        const btn = document.getElementById(`fav-btn-${userId}`);
+        
+        if (data.isFavorited) {
+          console.log('⭐ Added to favorites');
+          btn.textContent = '⭐ Remove';
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-danger');
+          showAlert('Added to favorites!', 'success');
+        } else {
+          console.log('⭐ Removed from favorites');
+          btn.textContent = '⭐ Add';
+          btn.classList.add('btn-success');
+          btn.classList.remove('btn-danger');
+          showAlert('Removed from favorites', 'success');
+        }
+        
+        loadFavorites(); // Refresh favorites list
+      } catch (error) {
+        console.error('❌ Toggle favorite error:', error.message);
+        showAlert(`Error: ${error.message}`, 'error');
+      }
+    }
+
+    /**
+     * Load Favorites
+     */
+    async function loadFavorites() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/contacts/favorites', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        console.log('⭐ Favorites:', data.favorites.length);
+        displayFavorites(data.favorites);
+      } catch (error) {
+        console.error('❌ Load favorites error:', error.message);
+      }
+    }
+
+    /**
+     * Display Favorites
+     */
+    function displayFavorites(favorites) {
+      const favList = document.getElementById('favorites-list');
+      
+      if (!favorites || favorites.length === 0) {
+        favList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No favorites yet</p>';
+        return;
+      }
+
+      favList.innerHTML = '';
+      favorites.forEach(fav => {
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        div.innerHTML = `
+          <span class="user-name">⭐ ${fav.username}</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-small btn-success" onclick="initiateCall('${fav.userId}')">Call</button>
+            <button class="btn btn-small btn-danger" onclick="removeFavorite('${fav.userId}')">✕</button>
+          </div>
+        `;
+        favList.appendChild(div);
+      });
+    }
+
+    /**
+     * Remove Favorite
+     */
+    async function removeFavorite(userId) {
+      try {
+        const token = localStorage.getItem('token');
+        await fetch('http://localhost:5000/api/contacts/toggle-favorite', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ userId })
+        });
+
+        console.log('⭐ Removed from favorites');
+        loadFavorites(); // Refresh list
+        showAlert('Removed from favorites', 'success');
+      } catch (error) {
+        console.error('❌ Remove favorite error:', error.message);
+      }
+    }
+
+    // ============================================================================
+    // SECTION 3: CALL INITIATION & FLOW
+    // ============================================================================
+
+    /**
+     * Initiate Call
+     */
+    function initiateCall(calleeId) {
+      console.log(`📞 Calling ${calleeId.substring(0, 8)}...`);
+      socket.emit('call-request', { calleeId });
+    }
+
+    /**
+     * Setup Socket Listeners
+     */
+    function setupSocketListeners() {
+      // Remove any existing listeners to prevent duplicates
+      socket.off('online-users');
+      socket.off('call-initiated');
+      socket.off('call-error');
+      socket.off('call-accepted');
+      socket.off('call-rejected');
+      socket.off('call-cancelled');
+      socket.off('incoming-call');
+      socket.off('call-ended');
+      
+      // Now register fresh listeners
+      socket.on('online-users', ({ users }) => {
+        console.log('👥 Online users:', users.length);
+        displayOnlineUsers(users);
+      });
+
+      socket.on('call-initiated', ({ callId }) => {
+        console.log('✅ Call initiated. Call ID:', callId);
+        window.callId = callId;
+        currentCallId = callId;
+      });
+
+      socket.on('call-error', ({ message }) => {
+        console.error('❌ Call error:', message);
+        showAlert(`Call failed: ${message}`, 'error');
+      });
+
+      socket.on('call-accepted', ({ callId, calleeId, callerId }) => {
+        console.log('✅ Call accepted!');
+        console.log('🔄 Starting WebRTC signaling...');
+        const isCallerFlag = calleeId ? true : false;
+        const remotePeerId = calleeId || callerId;
+        startWebRTC(socket, callId, remotePeerId, isCallerFlag);
+      });
+
+      socket.on('call-rejected', ({ callId, reason }) => {
+        console.log('❌ Call rejected:', reason);
+        showAlert(`Call rejected: ${reason}`, 'error');
+      });
+
+      socket.on('call-cancelled', ({ callId }) => {
+        console.log('❌ Call was cancelled');
+        showAlert('Call was cancelled', 'info');
+      });
+
+      socket.on('incoming-call', ({ callId, callerId, callerName }) => {
+        console.log(`📞 Incoming call from ${callerName}`);
+        window.incomingCallId = callId;
+        window.incomingCallerId = callerId;
+        showIncomingCallUI(callId, callerId, callerName);
+      });
+
+      socket.on('call-ended', ({ callId, reason }) => {
+        console.log('📵 Call ended:', reason);
+        loadCallHistory(); // Refresh history when call ends
+        closeCallUI();
+      });
+
+      // Remote media toggle events
+      socket.on('remote-mic-toggled', ({ enabled, userId }) => {
+        console.log(`${enabled ? '🎤' : '🔇'} Remote user's microphone is ${enabled ? 'ON' : 'OFF'}`);
+      });
+
+      socket.on('remote-camera-toggled', ({ enabled, userId }) => {
+        console.log(`${enabled ? '📹' : '📵'} Remote user's camera is ${enabled ? 'ON' : 'OFF'}`);
+      });
+    }
+
+    /**
+     * Load and Display Call History
+     */
+    async function loadCallHistory() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/users/call-history', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch call history');
+        
+        const data = await response.json();
+        const historyList = document.getElementById('call-history-list');
+
+        if (!data.callHistory || data.callHistory.length === 0) {
+          historyList.innerHTML = '<div style="padding: 15px; color: #999;">No calls yet</div>';
+          return;
+        }
+
+        historyList.innerHTML = data.callHistory.map(call => {
+          const startTime = new Date(call.startTime).toLocaleString();
+          const duration = call.duration ? `${Math.round(call.duration / 60)}m ${call.duration % 60}s` : '< 1s';
+          const callTypeEmoji = call.callType === 'incoming' ? '📥' : '📤';
+          
+          return `
+            <div style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600;">${callTypeEmoji} ${call.participantName}</div>
+                <div style="font-size: 0.85em; color: #666;">${startTime}</div>
+              </div>
+              <div style="font-size: 0.9em; color: #667eea; font-weight: 600;">${duration}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading call history:', error);
+      }
+    }
+
+    /**
+     * Clear Call History
+     */
+    async function clearCallHistory() {
+      if (!confirm('Are you sure you want to clear all call history?')) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/users/call-history', {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to clear call history');
+        
+        console.log('✅ Call history cleared');
+        loadCallHistory();
+      } catch (error) {
+        console.error('Error clearing history:', error);
+        showAlert('Failed to clear call history', 'error');
+      }
+    }
+
+    /**
+     * Show Incoming Call UI
+     */
+    function showIncomingCallUI(callId, callerId, callerName) {
+      const incomingCallUI = document.getElementById('incoming-call-ui');
+      incomingCallUI.innerHTML = `
+        <div class="incoming-call-container">
+          <h2>📞 Incoming Call</h2>
+          <p>From: <strong>${callerName.substring(0, 20)}</strong></p>
+          <div>
+            <button class="btn btn-success" onclick="acceptCall('${callId}')">✅ Accept</button>
+            <button class="btn btn-danger" onclick="rejectCall('${callId}')">❌ Reject</button>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Accept Call
+     */
+    function acceptCall(callId) {
+      console.log('📞 Accepting call...');
+      currentCallId = callId;
+      window.callId = callId;
+      socket.emit('call-accept', { callId });
+    }
+
+    /**
+     * Reject Call
+     */
+    function rejectCall(callId) {
+      console.log('❌ Rejecting call...');
+      socket.emit('call-reject', { callId });
+      document.getElementById('incoming-call-ui').innerHTML = '';
+    }
+
+    // ============================================================================
+    // SECTION 4: WEBRTC SIGNALING & MEDIA
+    // ============================================================================
+
+    /**
+     * Start WebRTC
+     */
+    async function startWebRTC(socket, callId, remotePeerId, isCallerFlag) {
+      console.log(`🎥 Starting WebRTC (${isCallerFlag ? 'Caller' : 'Callee'})...`);
+
+      try {
+        // Show call UI
+        document.getElementById('call-ui').style.display = 'block';
+        document.getElementById('incoming-call-ui').innerHTML = '';
+
+        // Create RTCPeerConnection
+        peerConnection = new RTCPeerConnection({
+          iceServers: [
+            { urls: ['stun:stun.l.google.com:19302'] },
+            { urls: ['stun:stun1.l.google.com:19302'] }
+          ]
+        });
+
+        // Get local media
+        console.log('🎤 Requesting camera and microphone...');
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+
+        console.log('✅ Camera and microphone granted');
+
+        // Add tracks
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
+
+        // Display local video
+        document.getElementById('local-video').srcObject = localStream;
+
+        // Handle remote stream
+        peerConnection.ontrack = (event) => {
+          console.log('📹 Received remote stream');
+          console.log('📹 Remote track type:', event.track.kind);
+          document.getElementById('remote-video').srcObject = event.streams[0];
+        };
+
+        // ICE candidates
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            socket.emit('webrtc-ice-candidate', {
+              callId,
+              candidate: event.candidate
+            });
+          }
+        };
+
+        // Remove old listener if exists to prevent duplicates
+        socket.off('webrtc-ice-candidate');
+        socket.on('webrtc-ice-candidate', ({ candidate }) => {
+          if (peerConnection && candidate) {
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+              .catch(err => console.error('❌ ICE candidate error:', err));
+          }
+        });
+
+        // Offer/Answer
+        if (isCallerFlag) {
+          console.log('📤 Creating and sending offer...');
+          const offer = await peerConnection.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true
+          });
+
+          await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+          socket.emit('webrtc-offer', { callId, offer });
+          console.log('✅ Offer sent');
+        }
+
+        // Remove old listener if exists to prevent duplicates
+        socket.off('webrtc-offer');
+        socket.on('webrtc-offer', async ({ offer }) => {
+          console.log('📥 Received offer');
+
+          if (!isCallerFlag && peerConnection) {
+            try {
+              await peerConnection.setRemoteDescription(
+                new RTCSessionDescription(offer)
+              );
+
+              console.log('📤 Creating and sending answer...');
+              const answer = await peerConnection.createAnswer();
+              await peerConnection.setLocalDescription(
+                new RTCSessionDescription(answer)
+              );
+
+              socket.emit('webrtc-answer', { callId, answer });
+              console.log('✅ Answer sent');
+            } catch (err) {
+              console.error('❌ Answer error:', err);
+            }
+          }
+        });
+
+        // Remove old listener if exists to prevent duplicates
+        socket.off('webrtc-answer');
+        socket.on('webrtc-answer', async ({ answer }) => {
+          console.log('📥 Received answer');
+
+          if (isCallerFlag && peerConnection) {
+            try {
+              await peerConnection.setRemoteDescription(
+                new RTCSessionDescription(answer)
+              );
+              console.log('✅ Connection established');
+            } catch (err) {
+              console.error('❌ Error setting answer:', err);
+            }
+          }
+        });
+
+        // Connection states
+        peerConnection.onconnectionstatechange = () => {
+          console.log('🔗 Connection state:', peerConnection.connectionState);
+
+          switch (peerConnection.connectionState) {
+            case 'connected':
+              console.log('✅ Peer connection established');
+              break;
+            case 'failed':
+              console.log('❌ Peer connection failed');
+              showAlert('Connection failed. Please try again.', 'error');
+              break;
+            case 'disconnected':
+            case 'closed':
+              console.log('⚠️  Peer connection ended');
+              closeCallUI();
+              break;
+          }
+        };
+
+        // Mic toggle
+        document.getElementById('mic-btn').onclick = () => {
+          if (localStream) {
+            const audioTracks = localStream.getAudioTracks();
+            if (audioTracks.length > 0) {
+              micEnabled = !micEnabled;
+              audioTracks[0].enabled = micEnabled;
+              document.getElementById('mic-btn').textContent = micEnabled ? '🎤 Mic ON' : '🔇 Mic OFF';
+              socket.emit('mic-toggled', { callId, enabled: micEnabled });
+              console.log(`🎤 Microphone ${micEnabled ? 'ON' : 'OFF'}`);
+            }
+          }
+        };
+
+        // Camera toggle
+        document.getElementById('camera-btn').onclick = () => {
+          if (localStream) {
+            const videoTracks = localStream.getVideoTracks();
+            if (videoTracks.length > 0) {
+              cameraEnabled = !cameraEnabled;
+              videoTracks[0].enabled = cameraEnabled;
+              document.getElementById('camera-btn').textContent = cameraEnabled ? '📹 Camera ON' : '📵 Camera OFF';
+              socket.emit('camera-toggled', { callId, enabled: cameraEnabled });
+              console.log(`📹 Camera ${cameraEnabled ? 'ON' : 'OFF'}`);
+            }
+          }
+        };
+
+        // Hangup
+        document.getElementById('hangup-btn').onclick = () => {
+          console.log('📵 Hanging up...');
+          socket.emit('call-hangup', { callId });
+          peerConnection.close();
+          closeCallUI();
+        };
+
+      } catch (error) {
+        console.error('❌ WebRTC error:', error.message);
+        showAlert(`WebRTC error: ${error.message}`, 'error');
+        closeCallUI();
+      }
+    }
+
+    /**
+     * Close Call UI
+     */
+    function closeCallUI() {
+      document.getElementById('call-ui').style.display = 'none';
+      document.getElementById('incoming-call-ui').innerHTML = '';
+      document.getElementById('local-video').srcObject = null;
+      document.getElementById('remote-video').srcObject = null;
+
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+
+      // Reset media buttons
+      micEnabled = true;
+      cameraEnabled = true;
+      document.getElementById('mic-btn').textContent = '🎤 Mic ON';
+      document.getElementById('camera-btn').textContent = '📹 Camera ON';
+
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+    }
+
+    // ============================================================================
+    // INITIALIZATION
+    // ============================================================================
+
+    console.log('✅ Application initialized and ready to use');
+  </script>
+</body>
+</html>
