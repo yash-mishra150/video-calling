@@ -180,7 +180,7 @@ const AppDashboard: FC<AppDashboardProps> = ({ username, onLogout }) => {
           }
         }
 
-        addLog(`Incoming call from ${displayName}`, "info");
+        // addLog(`Incoming call from ${displayName}`, "info");
         setIncomingCallData({ callId, callerId, callerName: displayName });
       },
     );
@@ -193,13 +193,13 @@ const AppDashboard: FC<AppDashboardProps> = ({ username, onLogout }) => {
     });
 
     socketService.on("call-rejected", ({ reason }: any) => {
-      addLog(`Call rejected: ${reason}`, "error");
+      // addLog(`Call rejected: ${reason}`, "error");
       showToast(`Call rejected: ${reason}`, "error");
       setIncomingCallData(null);
     });
 
     socketService.on("call-ended", ({ reason }: any) => {
-      addLog(`Call ended: ${reason}`, "warning");
+      // addLog(`Call ended: ${reason}`, "warning");
       showToast(`Call ended: ${reason}`, "warning");
       setIsCallActive(false);
       setCurrentCallId(null);
@@ -207,7 +207,7 @@ const AppDashboard: FC<AppDashboardProps> = ({ username, onLogout }) => {
     });
 
     socketService.on("call-error", ({ message }: any) => {
-      addLog(`Call error: ${message}`, "error");
+      // addLog(`Call error: ${message}`, "error");
       showToast(`Call error: ${message}`, "error");
       // Handle offline user error
       if (message && message.toLowerCase().includes("offline")) {
