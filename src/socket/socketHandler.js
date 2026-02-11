@@ -1,32 +1,14 @@
-/**
- * Socket.IO Handler for Presence, Call Signaling, and WebRTC Media
- * 
- * Features:
- * - Production-grade presence tracking (online/away/busy/offline)
- * - Heartbeat-based connection monitoring
- * - Batched presence updates
- * - Friend list caching
- * - Call request/accept/reject flow
- * - WebRTC offer/answer signaling
- * - ICE candidate relay
- * - Call cleanup on disconnect
- * - Prevent simultaneous calls
- */
-
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/env');
 const User = require('../models/users.model.js');
 const { PresenceService, PRESENCE_STATUS } = require('../services/presenceService');
 
-// In-memory data stores
-const userSessions = new Map(); // userId -> { socketId, callStatus: 'idle'|'calling'|'in-call', username }
-const activeCalls = new Map(); // callId -> { caller, callee, status: 'pending'|'accepted'|'active' }
+const userSessions = new Map(); 
+const activeCalls = new Map();
 
-let presenceService = null; // Initialized in initializeSocketHandlers
+let presenceService = null; 
 
-/**
- * Authenticate socket connection via JWT token
- */
+
 const authenticateSocket = (socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) {
